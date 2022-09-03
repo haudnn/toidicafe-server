@@ -17,7 +17,6 @@ export const uploadToCloudinary = async (path: string) => {
   } catch (err) {
     console.log(err);
   }
-
 };
 
 export const createJWTtoken = (id: any) => {
@@ -29,12 +28,22 @@ export const createJWTtoken = (id: any) => {
   }
   return jwtToken;
 };
+let refreshTokens: any = []
 export const createRefreshJWTtoken = (id: any) => {
-  let jwtToken;
+  let jwtRefreshToken;
   try {
-    jwtToken = jwt.sign({ userId: id }, JWT_KEY_REFRESH || '', { expiresIn: '7d' });
+    jwtRefreshToken = jwt.sign({ userId: id }, JWT_KEY_REFRESH || '', { expiresIn: '7d' });
+    refreshTokens.push(jwtRefreshToken)
   } catch (err) {
     console.log(err);
   }
-  return jwtToken;
+  return jwtRefreshToken;
 };
+export const checkedRefreshToken = (refreshToken: string) => {
+  if(!refreshTokens.includes(refreshToken)) return 401
+}
+export const removeSpace = (str: string) => {
+  return str.replace(/\s/g, '')
+}
+
+

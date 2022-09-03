@@ -1,9 +1,9 @@
 import express from 'express';
-import { signup, login, refreshToken } from './user.controller';
+import { register, login, refreshToken } from './user.controller';
 
 const router = express.Router();
 
-router.post('/signup', signup);
+router.post('/register', register);
 router.post('/login', login);
 router.post('/refresh', refreshToken);
 

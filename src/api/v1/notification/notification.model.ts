@@ -10,4 +10,4 @@ const NotificationSchema = new Schema(
     date: { type: Date, default: Date.now },
   },
 );
-export const NotificationModel =  model('Notification', NotificationSchema);
+export default  model('Notification', NotificationSchema);

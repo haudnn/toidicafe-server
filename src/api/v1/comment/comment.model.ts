@@ -12,4 +12,4 @@ const CommentSchema = new Schema(
     timestamps: true,
   }
 );
-export const CommentModel =  model('Comment', CommentSchema);
+export default model('Comment', CommentSchema);

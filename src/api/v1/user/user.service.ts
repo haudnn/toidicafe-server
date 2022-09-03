@@ -1,6 +1,6 @@
 import _User from './user.model';
 import bcrypt from 'bcryptjs';
-import { createJWTtoken, createRefreshJWTtoken } from '../helpers/';
+import { createJWTtoken, createRefreshJWTtoken, removeSpace } from '../helpers/';
 import dotenv from 'dotenv';
 dotenv.config();
 const DEFAULT_AVATAR =
@@ -10,9 +10,10 @@ interface User {
   displayName: string;
   email: string;
   password: string;
+  role: string
 }
 const that = {
-  regisUser: async ({ displayName, email, password }: User) => {
+  regisUser: async ({ displayName, email, password, role= "user" }: User) => {
     try {
       const existingUser = await _User.findOne({ email });
       if (existingUser) {
@@ -22,19 +23,24 @@ const that = {
         };
       }
       const hashedPassword = await bcrypt.hash(password, 12);
+      const userName = removeSpace(displayName)
       const user = await _User.create({
         displayName,
+        userName,
         email,
+        role,
         password: hashedPassword,
         avatar: DEFAULT_AVATAR
       });
       const token = createJWTtoken(user.id);
       const rftoken = createRefreshJWTtoken(user.id)
+
       return {
         code: 201,
         message: 'success',
         user: {
           displayName: user.displayName,
+          userName: user.userName,
           userId: user.id,
           email: user.email,
           avatar: user.avatar,
