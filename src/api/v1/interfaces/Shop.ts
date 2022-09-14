@@ -1,18 +1,27 @@
-
+type address = {
+  [key: string]: any
+}
+type price = { 
+  [key: string]: number
+}
+type social = { 
+  [key: string]: string
+}
+type time = { 
+  [key: string]: string
+}
 export default interface Shop {
     name: string;
     images: Array<string>;
     description: string;
-    area: string;
-    location: string;
-    priceMin: string;
-    priceMax: string;
-    types: Array<string>;
+    region: String;
+    address: address;
+    price: price
+    purposes: Array<string>;
     tags: Array<string>;
-    utilities: Array<string>;
+    benefits: Array<string>;
     // menu:  Array<string>;
-    facebook: string;
-    instagram: string;
-    timeOpen: string;
-    timeClose: string;
+    social: social;
+    time: time;
+    slug: string;
   }

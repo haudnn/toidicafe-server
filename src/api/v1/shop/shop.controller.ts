@@ -1,10 +1,11 @@
 import { RequestHandler } from 'express';
 import { uploadToCloudinary } from '../helpers';
 import that from './shop.service';
-
+import slug from 'slug'
 interface responseService {
   code: number;
   message: string;
+  meta: any;
   shop: any;
   shops: Array<any>;
 }
@@ -23,7 +24,9 @@ const {
   unbookmarkShopService,
   getBookmarksService,
   getShopByIdService,
-  getSearchResultsService
+  getSearchResultsService,
+  searchPlaceService,
+  getShopBySlugService
 } = that;
 export const createShop: RequestHandler = async (req, res, next) => {
   try {
@@ -37,34 +40,30 @@ export const createShop: RequestHandler = async (req, res, next) => {
     const {
       name,
       description,
-      area,
-      location,
-      priceMin,
-      priceMax,
+      address,
+      price,
+      purposes,
       tags,
-      types,
-      utilities,
-      facebook,
-      instagram,
-      timeOpen,
-      timeClose,
+      benefits,
+      social,
+      time,
+      region
     } = req.body;
     let images: any = urls;
+    const createSlug = slug(name)
     const { code, shop, message } = (await createShopService({
       name,
       description,
-      area,
-      location,
-      priceMin,
-      priceMax,
-      types,
+      slug: createSlug,
+      address,
+      price,
+      purposes,
       tags,
-      utilities,
-      facebook,
-      instagram,
-      timeOpen,
-      timeClose,
+      benefits,
+      social,
+      time,
       images,
+      region
     })) as responseService;
     res.status(code).json({
       message: message,
@@ -76,16 +75,16 @@ export const createShop: RequestHandler = async (req, res, next) => {
 };
 export const updateShop: RequestHandler = async (req, res, next) => {
   const { shopId } = req.params;
-  let data = req.body;
-  const files: any = req.files;
-  if (files.length > 0) {
-    const urls = [];
-    for (const file of files) {
-      const uploadedResponse = await uploadToCloudinary(file.path);
-      urls.push(uploadedResponse);
-    }
-    data = { ...data, images: urls };
-  }
+  let {data} = req.body;
+  // const files: any = req.files;
+  // if (files.length > 0) {
+  //   const urls = [];
+  //   for (const file of files) {
+  //     const uploadedResponse = await uploadToCloudinary(file.path);
+  //     urls.push(uploadedResponse);
+  //   }
+  //   data = { ...data, images: urls };
+  // }
 
   try {
     const { code, shop, message } = (await updateShopService(shopId, data)) as responseService;
@@ -187,7 +186,7 @@ export const getBookmarks: RequestHandler = async (req, res, next) => {
 export const getShopById: RequestHandler = async (req, res, next) => {
   const { shopId } = req.params
   try{
-    const {code, message, shop} = await getShopByIdService(shopId) as responseService;
+    const {code, message,shop} = await getShopByIdService(shopId) as responseService;
     return res.status(code).json({
       message: message,
       shop
@@ -214,6 +213,32 @@ export const searchShops: RequestHandler = async (req, res, next) => {
       shops
     })
   }catch(err){
+    console.log(err)
+  }
+}
+export const searchPlace: RequestHandler = async (req, res, next): Promise<any> => {  
+  const query = req.body
+  try{  
+    const {code, message, meta,shops} = await searchPlaceService(query) as responseService
+    return res.status(code).json({
+      message: message,
+      meta,
+      shops
+    })
+  }catch(err){
+    console.log(err)
+  }
+}
+export const getShopBySlug: RequestHandler = async (req, res, next): Promise<any> =>  {
+  const {slug} = req.params
+  try{
+    const {code, message, shop} = await getShopBySlugService(slug) as responseService
+    return res.status(code).json({
+      message: message,
+      shop
+    })
+  }
+  catch(err){
     console.log(err)
   }
 }
