@@ -141,30 +141,6 @@ const that = {
       console.log(err);
     }
   },
-  filterShopByAreaService: async (shopArea: Array<string>) => {
-    try {
-      const shops = await _Shop.find({ area: { $in: shopArea } });
-      return {
-        code: 200,
-        message: 'success',
-        shops,
-      };
-    } catch (err) {
-      console.log(err);
-    }
-  },
-  filterShopByTypeService: async (shopType: Array<string>) => {
-    try {
-      const shops = await _Shop.find({ types: { $all: shopType } });
-      return {
-        code: 200,
-        message: 'success',
-        shops,
-      };
-    } catch (err) {
-      console.log(err);
-    }
-  },
   bookmarksShopService: async (shopId: string, userId: string) => {
     try {
       await _Shop.findByIdAndUpdate(shopId, { $addToSet: { bookmarks: userId } }, { new: true });
@@ -211,36 +187,38 @@ const that = {
       console.log(err);
     }
   },
-  getSearchResultsService: async (query: any, area: any) => {
-    let shops;
-    try {
-      shops = await _Shop.find(query);
-      if (shops.length === 0) {
-        shops = await _Shop.find({ $text: { $search: area } });
-      }
-      return {
-        code: 200,
-        message: 'success',
-        shops,
-      };
-    } catch (err) {
-      console.log(err);
-    }
-  },
   searchPlaceService: async (query: any) => {
     try {
       const pagesize = 10;
-      const { page, regions, purposes, benefits, tags } = query;
+      const { page, regions, purposes, benefits, tags, openning } = query;
       if (
         regions.length === 0 &&
         purposes.length === 0 &&
         benefits.length === 0 &&
-        tags.length == 0
+        tags.length == 0 &&
+        openning === false
       ) {
-        const shops = await _Shop
+        const shopsFirstTime = await _Shop
           .find()
           .skip((page - 1) * pagesize)
           .limit(pagesize);
+        const shops = shopsFirstTime.map((shop: any) => {
+          const close: any = shop?.time?.close;
+          const open: any = shop?.time?.open;
+          const status = calculateTime(open, close);
+          return {
+            time: shop.time,
+            name: shop.name,
+            address: shop.address,
+            price: {
+              min: shop.price.min,
+              max: shop.price.max,
+            },
+            slug: shop.slug,
+            images: shop.images[0],
+            status,
+          };
+        });
         return {
           code: 200,
           message: 'success',
@@ -266,10 +244,27 @@ const that = {
         tmp = [...tmp, listShop[i].shop];
       }
       const result = tmp.flat(Infinity);
-      const shops = await _Shop
+      const shopsFirstTime = await _Shop
         .find({ _id: { $in: result } })
         .skip((page - 1) * pagesize)
         .limit(pagesize);
+      const shops = shopsFirstTime.map((shop) => {
+        const close: any = shop?.time?.close;
+        const open: any = shop?.time?.open;
+        const status = calculateTime(open, close);
+        return {
+          time: shop.time,
+          name: shop.name,
+          address: shop.address,
+          price: {
+            min: shop?.price?.min,
+            max: shop?.price?.max,
+          },
+          slug: shop.slug,
+          images: shop.images[0],
+          status,
+        };
+      });
       return {
         code: 200,
         message: 'success',
@@ -295,9 +290,9 @@ const that = {
       }
       const benefits = await _Benefit.find({ shop: shop.id }).select('name icon');
       const tags = await _Tag.find({ shop: shop.id }).limit(2).select('name slug');
-      const open:any = shop?.time?.open
-      const close:any = shop?.time?.close
-      const status = calculateTime(open, close)
+      const open: any = shop?.time?.open;
+      const close: any = shop?.time?.close;
+      const status = calculateTime(open, close);
       return {
         code: 200,
         message: 'success',
@@ -317,7 +312,7 @@ const that = {
           description: shop.description,
           benefits,
           tags,
-          status
+          status,
         },
       };
     } catch (err) {

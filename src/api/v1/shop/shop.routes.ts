@@ -5,10 +5,7 @@ import {
   createShop,
   updateShop,
   deleteShop,
-  filterShopByArea,
   listShops,
-  filterShopByTypes,
-  searchShops,
   bookmarkShop,
   unbookmarkShop,
   getBookmarks, 
@@ -20,8 +17,6 @@ import verifyToken from '../middlewares/verifyToken';
 const router = express.Router();
 
 router.post('/', fileUpload.array('image'), createShop);
-router.post('/area', filterShopByArea);
-router.post('/types', filterShopByTypes);
 // router.get('/search?', searchShops);
 // router.get('/', listShops);
 router.get('/:slug', getShopBySlug)

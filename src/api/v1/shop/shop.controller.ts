@@ -18,13 +18,10 @@ const {
   updateShopService,
   deleteShopService,
   listShopService,
-  filterShopByAreaService,
-  filterShopByTypeService,
   bookmarksShopService,
   unbookmarkShopService,
   getBookmarksService,
   getShopByIdService,
-  getSearchResultsService,
   searchPlaceService,
   getShopBySlugService
 } = that;
@@ -119,30 +116,7 @@ export const listShops: RequestHandler = async (req, res, next) => {
     console.error(err);
   }
 };
-export const filterShopByArea: RequestHandler = async (req, res, next) => {
-  try {
-    const { shopArea } = req.body;
-    const { code, shops, message } = (await filterShopByAreaService(shopArea)) as responseService;
-    res.status(code).json({
-      message: message,
-      shops,
-    });
-  } catch (err) {
-    console.error(err);
-  }
-};
-export const filterShopByTypes: RequestHandler = async (req, res, next) => {
-  try {
-    const { shopTypes } = req.body;
-    const { code, shops, message } = (await filterShopByTypeService(shopTypes)) as responseService;
-    res.status(code).json({
-      message: message,
-      shops,
-    });
-  } catch (err) {
-    console.error(err);
-  }
-};
+
 export const bookmarkShop: RequestHandler = async (req, res, next) => {
   const { shopId, userId } = req.body;
   try {
@@ -198,24 +172,7 @@ export const getShopById: RequestHandler = async (req, res, next) => {
     });
   }
 }
-export const searchShops: RequestHandler = async (req, res, next) => {
-  const {q} = req.query
-  const query:any= {}
-  if(q) {
-    const options = '$options';
-    query.name = { $regex: q, [options]: 'i' };
-    // query.area = { $regex: q, [options]: 'i' };
-  }
-  try{  
-    const {code, message, shops} = await getSearchResultsService(query, q) as responseService
-    return res.status(code).json({
-      message: message,
-      shops
-    })
-  }catch(err){
-    console.log(err)
-  }
-}
+
 export const searchPlace: RequestHandler = async (req, res, next): Promise<any> => {  
   const query = req.body
   try{  
