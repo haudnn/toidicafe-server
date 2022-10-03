@@ -21,7 +21,7 @@ app.use(cors())
 
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/shops', shopRoutes);
-app.use('/api/v1/review', reviewRoutes);
+app.use('/api/v1/reviews', reviewRoutes);
 app.use('/api/v1/benefits', benefitRoutes );
 app.use('/api/v1/regions', regionRoutes );
 app.use('/api/v1/tags', tagRoutes );

@@ -14,6 +14,13 @@ cloudinary.config({
   api_key: CLOUDINARY_API_KEY,
   api_secret: CLOUDINARY_API_SECRET,
 });
+interface Star {
+  position: number,
+  space: number,
+  price: number,
+  drink: number,
+  service: number,
+}
 export const uploadToCloudinary = async (path: string) => {
   try {
     const uploadedResponse = await cloudinary.uploader.upload(path, {
@@ -28,26 +35,27 @@ export const uploadToCloudinary = async (path: string) => {
 export const createJWTtoken = (id: any) => {
   let jwtToken;
   try {
-    jwtToken = jwt.sign({ userId: id }, JWT_KEY || '', { expiresIn: '1h' });
+    jwtToken = jwt.sign({ userId: id }, JWT_KEY || '', { expiresIn: '15m' });
   } catch (err) {
     console.log(err);
   }
   return jwtToken;
 };
-let refreshTokens: any = [];
+
 export const createRefreshJWTtoken = (id: any) => {
   let jwtRefreshToken;
   try {
     jwtRefreshToken = jwt.sign({ userId: id }, JWT_KEY_REFRESH || '', { expiresIn: '7d' });
-    refreshTokens.push(jwtRefreshToken);
   } catch (err) {
     console.log(err);
   }
   return jwtRefreshToken;
 };
-export const checkedRefreshToken = (refreshToken: string) => {
-  if (!refreshTokens.includes(refreshToken)) return 401;
-};
+// export const checkedRefreshToken = (refreshToken: string) => {
+//   if (!refreshTokens.includes(refreshToken)){
+//     return 401
+//   };
+// };
 export const removeSpace = (str: string) => {
   return str.replace(/\s/g, '');
 };
@@ -66,3 +74,34 @@ export const calculateTime = (openTime: string, closeTime: string) => {
   if (covertOpenTime < cur && cur < covertCloseTime && covertCloseTime - cur <= 30) result = 'closeSoon';
   return result;
 };
+export const formatStar = (star: any) => {
+  let avgStar = 0
+  let format = Object.keys(star).reduce((acc:any, key) => {
+    if(star[key] === 100) {
+      acc[key] = 5;
+      avgStar += 5
+    }
+    if(star[key] === 80) {
+      acc[key] = 4;
+      avgStar += 4
+    }
+    if(star[key] === 60) {
+      acc[key] = 3;
+      avgStar += 3
+    }
+    if(star[key] === 40) {
+      acc[key] = 2;
+      avgStar += 2
+    }
+    if(star[key] === 20) {
+      acc[key] = 1;
+      avgStar += 1
+    }
+    return acc;
+  }, {});
+  let result = {
+    starFormat : {...format},
+    avgStar: avgStar/5
+   }
+  return result
+}

@@ -4,7 +4,7 @@ import { createJWTtoken, createRefreshJWTtoken, removeSpace } from '../helpers/'
 import dotenv from 'dotenv';
 dotenv.config();
 const DEFAULT_AVATAR =
-  'https://res.cloudinary.com/mycloudiary/image/upload/v1660812252/toidicaphe/default-avt_phrdn2.jpg';
+  'https://res.cloudinary.com/mycloudiary/image/upload/v1663473826/toidicaphe/avt_default_xc5y8x.jpg';
 
 interface User {
   displayName: string;
@@ -40,9 +40,6 @@ const that = {
         message: 'success',
         user: {
           displayName: user.displayName,
-          userName: user.userName,
-          userId: user.id,
-          email: user.email,
           avatar: user.avatar,
           token,
           rftoken
@@ -54,7 +51,7 @@ const that = {
   },
   loginUser: async (email: string, password: string) => {
     try{
-      const existingUser = await _User.findOne({ email });
+      const existingUser = await _User.findOne({ email })
       if (!existingUser) {
         return {
           code: 403,
@@ -75,8 +72,6 @@ const that = {
         message: 'success',
         user: {
           displayName: existingUser.displayName,
-          userId: existingUser.id,
-          email: existingUser.email,
           avatar: existingUser.avatar,
           token,
           rftoken
@@ -87,30 +82,45 @@ const that = {
       console.error(err);
     }
   },
-  refreshTokenUser: async (info: string) => {
+  refreshTokenUser: async (userId: string) => {
     try{
-      const user = await _User.findById(info)
+      const user = await _User.findById(userId)
       if (!user) {
         return {
           code: 403,
           message: 'Không tìm thấy người dùng',
         };
       }
-      const token = createJWTtoken(user._id)
+      const token = createJWTtoken(user.id)
       return {
         code: 200,
         message: 'success',
-        user : {
-          displayName: user.displayName,
-          userId: user.id,
-          email: user.email,
-          avatar: user.avatar,
-          token,
-        }
+        token,
       }
     }
     catch (err) {
       console.error(err);
+    }
+  },
+  getCurrentUser: async (id: string) => {
+    try {
+      const user = await _User.findById(id)
+      .select("bookmarks displayName avatar")
+      console.log(user)
+      if(!user) {
+        return {
+          code: 401,
+          message: "Can't find user by ID"
+        };
+      }
+      return {
+        code: 200,
+        message: "success",
+        user
+      };
+    }
+    catch (err) {
+
     }
   }
 };

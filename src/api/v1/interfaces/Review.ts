@@ -9,6 +9,6 @@ export default interface Review {
   shop: string;
   star: Array<Star>;
   images: Array<string>;
-  anonymous: boolean;
+  anonymous: string;
   author: string;
 }

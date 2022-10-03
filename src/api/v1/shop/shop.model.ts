@@ -12,13 +12,6 @@ const ShopSchema = new Schema({
   price: { min: { type: Number, required: true }, max: { type: Number, required: true } },
   reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Review' }],
   bookmarks: [{ type: mongoose.Types.ObjectId, ref: 'User' }],
-  // timeOpen: { type: String, required: true },
-  // timeClose: { type: String, required: true },
-  // area: { type: String, required: true },
-  // location: { type: String, required: true },
-  // priceMin: { type: String, required: true },
-  // priceMax: { type: String, required: true },
-  // facebook: { type: String },
-  // instagram: { type: String },
 });
+ShopSchema.index({name: 'text'});
 export default model('Shop', ShopSchema);

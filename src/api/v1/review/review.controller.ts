@@ -7,8 +7,24 @@ interface responseService {
   code: number;
   message: string;
   review: any;
+  reviews: any;
+  reviewsCount: number;
+  avgRate: number;
 }
-const { createReviewService, likeReviewService, unLikeReviewService } = that;
+interface Star {
+  position: string;
+  space: string;
+  price: string;
+  drink: string;
+  service: string;
+}
+const {
+  createReviewService,
+  likeReviewService,
+  unLikeReviewService,
+  getReviewByShopIdService,
+  deleteReviewService,
+} = that;
 export const createReview: RequestHandler = async (req, res, next) => {
   try {
     const urls = [];
@@ -20,7 +36,9 @@ export const createReview: RequestHandler = async (req, res, next) => {
       }
     }
     let images: Array<any> = urls;
-    const { title, body, shopId, anonymous, userId, star } = req.body;
+    const { title, body, shopId, anonymous, star } = req.body;
+    const userId = req.user;
+    const { position, space, price, drink, service } = star;
     const validatorResult = validator(title, body);
     if (!validatorResult) return res.status(401).json({ message: 'Invalid' });
     const { code, message, review } = (await createReviewService({
@@ -29,7 +47,14 @@ export const createReview: RequestHandler = async (req, res, next) => {
       shop: shopId,
       anonymous,
       author: userId,
-      star,
+      star: {
+        ...star,
+        position: +position,
+        space: +space,
+        price: +price,
+        drink: +drink,
+        service: +service,
+      },
       images,
     })) as responseService;
     res.status(code).json({
@@ -65,6 +90,37 @@ export const unLikeReview: RequestHandler = async (req, res, next) => {
     res.status(code).json({
       message,
       review,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
+export const getReviewByShopId: RequestHandler = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const { code, message, reviews, reviewsCount, avgRate } = (await getReviewByShopIdService(
+      id
+    )) as responseService;
+    return res.status(code).json({
+      message,
+      reviews,
+      reviewsCount,
+      avgRate,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: 'Không thể fetching shops',
+    });
+  }
+};
+export const deleteReview: RequestHandler = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { code, message } = await deleteReviewService(
+      id
+    ) as responseService;
+    return res.status(code).json({
+      message,
     });
   } catch (err) {
     console.log(err);

@@ -2,12 +2,13 @@ import { RequestHandler } from 'express';
 import { uploadToCloudinary } from '../helpers';
 import that from './shop.service';
 import slug from 'slug'
+import console from 'console';
 interface responseService {
   code: number;
   message: string;
   meta: any;
-  shop: any;
-  shops: Array<any>;
+  shop?: any;
+  shops?: Array<any>;
 }
 interface query {
   name: any;
@@ -21,9 +22,10 @@ const {
   bookmarksShopService,
   unbookmarkShopService,
   getBookmarksService,
-  getShopByIdService,
   searchPlaceService,
-  getShopBySlugService
+  getShopBySlugService,
+  getPhotosShopService,
+  searchShopByNameService
 } = that;
 export const createShop: RequestHandler = async (req, res, next) => {
   try {
@@ -118,7 +120,8 @@ export const listShops: RequestHandler = async (req, res, next) => {
 };
 
 export const bookmarkShop: RequestHandler = async (req, res, next) => {
-  const { shopId, userId } = req.body;
+  const { shopId} = req.body;
+  const userId = req.user
   try {
     const { code, message } = (await bookmarksShopService(shopId, userId)) as responseService;
     return res.status(code).json({
@@ -131,7 +134,8 @@ export const bookmarkShop: RequestHandler = async (req, res, next) => {
   }
 };
 export const unbookmarkShop: RequestHandler = async (req, res, next) => {
-  const { shopId, userId } = req.body;
+  const { shopId} = req.body;
+  const userId = req.user
   try {
     const { code, message } = (await unbookmarkShopService(shopId, userId)) as responseService;
     return res.status(code).json({
@@ -145,11 +149,12 @@ export const unbookmarkShop: RequestHandler = async (req, res, next) => {
 };
 export const getBookmarks: RequestHandler = async (req, res, next) => {
   try {
-    const { userId } = req.body;
-    const {code, message, shops } = await getBookmarksService(userId) as responseService;
+    const { openning, region} = req.query
+    const userId = req.user
+    const {code, message, shops } = await getBookmarksService(userId, { openning, region}) as responseService;
     return res.status(code).json({
       message: message,
-      shops:  shops.map((shop) => shop.toObject({ getters: true }))
+      shops
     })
   } catch (err) {
     return res.status(500).json({
@@ -157,22 +162,6 @@ export const getBookmarks: RequestHandler = async (req, res, next) => {
     });
   }
 };
-export const getShopById: RequestHandler = async (req, res, next) => {
-  const { shopId } = req.params
-  try{
-    const {code, message,shop} = await getShopByIdService(shopId) as responseService;
-    return res.status(code).json({
-      message: message,
-      shop
-    });
-
-  }catch(err){
-    return res.status(500).json({
-      message: 'Không thể fetching shops',
-    });
-  }
-}
-
 export const searchPlace: RequestHandler = async (req, res, next): Promise<any> => {  
   const query = req.body
   try{  
@@ -199,3 +188,35 @@ export const getShopBySlug: RequestHandler = async (req, res, next): Promise<any
     console.log(err)
   }
 }
+export const getPhotosShop: RequestHandler = async (req, res, next): Promise<any> => { 
+  const {slug} = req.params
+  try { 
+    const {code, message, shop} = await getPhotosShopService(slug) as responseService
+    return res.status(code).json({
+      message: message,
+      shop
+    })
+  }
+  catch(err){
+    console.log(err)
+  }
+}
+export const searchShopByName : RequestHandler = async (req, res, next): Promise<any> => { 
+  try {
+    const query = req.query.q
+    console.log(query)
+    if(!query) {
+      return res.status(200).json({
+        message: 'success',
+        shops : []
+      })
+    }
+    const {code, message, shops } = await searchShopByNameService(query) as responseService
+    return res.status(code).json({
+      message: message,
+      shops
+    })
+  }
+  catch(err) {  console.log(err)  }
+}
+

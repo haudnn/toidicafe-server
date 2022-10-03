@@ -5,33 +5,31 @@ import {
   createShop,
   updateShop,
   deleteShop,
-  listShops,
   bookmarkShop,
   unbookmarkShop,
   getBookmarks, 
-  getShopById,
   searchPlace,
-  getShopBySlug
+  getShopBySlug,
+  getPhotosShop,
+  searchShopByName,
 } from './shop.controller';
 import verifyToken from '../middlewares/verifyToken';
 const router = express.Router();
 
 router.post('/', fileUpload.array('image'), createShop);
-// router.get('/search?', searchShops);
-// router.get('/', listShops);
 router.get('/:slug', getShopBySlug)
+router.get('/:slug/photo', getPhotosShop)
 router.delete('/:shopId', deleteShop);
 router.post('/search', searchPlace)
 router.patch('/:shopId' , updateShop);
+router.get('/search/select',searchShopByName)
+
+
 router.use(verifyToken);
-// router.patch('/:shopId', fileUpload.array('image'), updateShop);
 
-
-router.get('/:shopId', getShopById)
-router.post('/bookmark', bookmarkShop);
-router.post('/unbookmark', unbookmarkShop);
-router.get('/bookmark', getBookmarks);
-
+router.post('/bookmark',  bookmarkShop);
+router.post('/unbookmark',  unbookmarkShop);
+router.get('/bookmark/saved',  getBookmarks);
 
 
 export default router;

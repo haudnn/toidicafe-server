@@ -6,6 +6,7 @@ import _Benefit from '../benefit/benefit.model';
 import _Tag from '../tag/tag.model';
 import _Region from '../region/region.model';
 import _Purpose from '../purpose/Purpose.model';
+import _Review from '../review/review.model'
 const that = {
   createShopService: async ({
     name,
@@ -147,7 +148,7 @@ const that = {
       return {
         code: 200,
         message: 'success',
-      };
+      };  
     } catch (err) {
       console.log(err);
     }
@@ -163,9 +164,52 @@ const that = {
       console.log(err);
     }
   },
-  getBookmarksService: async (userId: string) => {
+  getBookmarksService: async (userId: string, query: any) => {
     try {
-      const shops = await _Shop.find({ bookmarks: userId });
+      let { openning, region} = query
+      openning = openning || 'false';
+      region = region || "all"
+      let shops;
+      let shopsFirstTime = await _Shop.find({bookmarks: userId});
+      const format = shopsFirstTime.map((shop) => {
+        const close: any = shop?.time?.close;
+        const open: any = shop?.time?.open;
+        const status = calculateTime(open, close);
+        return {
+          id: shop.id,
+          time: shop.time,
+          name: shop.name,
+          address: shop.address,
+          bookmarks: shop.bookmarks,
+          price: {
+            min: shop?.price?.min,
+            max: shop?.price?.max,
+          },
+          slug: shop.slug,
+          images: shop.images[0],
+          status,
+        }
+      })
+      if(openning === 'false' &&  region === "all"){ 
+        shops = format
+      }
+      if(openning === 'true') {
+        shops = format.filter((shop) => shop.status === "openning" || shop.status === "closeSoon")
+      }
+      if(region !== "all") {
+        const regionFound:any = await _Region.findOne({ slug: region}).select("shop")
+        if(openning === "true") {
+          shops = format.filter((shop) => {
+            return regionFound.shop.includes(shop.id) && shop.status === "openning" || shop.status === "closeSoon"
+          })
+        }
+        if(openning === "false") {
+          shops = format.filter((shop) => {
+            return regionFound.shop.includes(shop.id)
+          })
+        }
+      }
+
       return {
         code: 200,
         message: 'success',
@@ -175,50 +219,66 @@ const that = {
       console.log(err);
     }
   },
-  getShopByIdService: async (shopId: string) => {
-    try {
-      const shop = await _Shop.findById(shopId).populate('reviews');
-      return {
-        code: 200,
-        message: 'success',
-        shop,
-      };
-    } catch (err) {
-      console.log(err);
-    }
-  },
   searchPlaceService: async (query: any) => {
     try {
       const pagesize = 10;
       const { page, regions, purposes, benefits, tags, openning } = query;
+      let shops;
       if (
         regions.length === 0 &&
         purposes.length === 0 &&
         benefits.length === 0 &&
-        tags.length == 0 &&
-        openning === false
+        tags.length == 0
       ) {
         const shopsFirstTime = await _Shop
           .find()
           .skip((page - 1) * pagesize)
           .limit(pagesize);
-        const shops = shopsFirstTime.map((shop: any) => {
-          const close: any = shop?.time?.close;
-          const open: any = shop?.time?.open;
-          const status = calculateTime(open, close);
-          return {
-            time: shop.time,
-            name: shop.name,
-            address: shop.address,
-            price: {
-              min: shop.price.min,
-              max: shop.price.max,
-            },
-            slug: shop.slug,
-            images: shop.images[0],
-            status,
-          };
-        });
+
+        if (openning) {
+          const shopsFilter = shopsFirstTime.map((shop) => {
+            const close: any = shop?.time?.close;
+            const open: any = shop?.time?.open;
+            const status = calculateTime(open, close);
+            return (
+              status === "openning" && {
+                id: shop.id,
+                time: shop.time,
+                name: shop.name,
+                address: shop.address,
+                bookmarks: shop.bookmarks,
+                price: {
+                  min: shop.price?.min,
+                  max: shop.price?.max,
+                },
+                slug: shop.slug,
+                images: shop.images[0],
+                status,
+              }
+            );
+          });
+          shops =  shopsFilter.filter(shop => shop)
+        } else {
+          shops = shopsFirstTime.map((shop: any) => {
+            const close: any = shop?.time?.close;
+            const open: any = shop?.time?.open;
+            const status = calculateTime(open, close);
+            return {
+              id: shop.id,
+              time: shop.time,
+              name: shop.name,
+              address: shop.address,
+              bookmarks: shop.bookmarks,
+              price: {
+                min: shop.price.min,
+                max: shop.price.max,
+              },
+              slug: shop.slug,
+              images: shop.images[0],
+              status,
+            };
+          });
+        }
         return {
           code: 200,
           message: 'success',
@@ -248,23 +308,49 @@ const that = {
         .find({ _id: { $in: result } })
         .skip((page - 1) * pagesize)
         .limit(pagesize);
-      const shops = shopsFirstTime.map((shop) => {
-        const close: any = shop?.time?.close;
-        const open: any = shop?.time?.open;
-        const status = calculateTime(open, close);
-        return {
-          time: shop.time,
-          name: shop.name,
-          address: shop.address,
-          price: {
-            min: shop?.price?.min,
-            max: shop?.price?.max,
-          },
-          slug: shop.slug,
-          images: shop.images[0],
-          status,
-        };
-      });
+      if (openning) {
+        const shopsFilter = shopsFirstTime.map((shop) => {
+          const close: any = shop?.time?.close;
+          const open: any = shop?.time?.open;
+          const status = calculateTime(open, close);
+          return  status === 'openning' && {
+              id: shop.id,
+              time: shop.time,
+              name: shop.name,
+              address: shop.address,
+              bookmarks: shop.bookmarks,
+              price: {
+                min: shop.price?.min,
+                max: shop.price?.max,
+              },
+              slug: shop.slug,
+              images: shop.images[0],
+              status,
+            }
+          ;
+        });
+        shops = shopsFilter.filter(shop => shop)
+      } else {
+        shops = shopsFirstTime.map((shop: any) => {
+          const close: any = shop?.time?.close;
+          const open: any = shop?.time?.open;
+          const status = calculateTime(open, close);
+          return {
+            id: shop.id,
+            time: shop.time,
+            name: shop.name,
+            address: shop.address,
+            bookmarks: shop.bookmarks,
+            price: {
+              min: shop.price.min,
+              max: shop.price.max,
+            },
+            slug: shop.slug,
+            images: shop.images[0],
+            status,
+          };
+        });
+      }
       return {
         code: 200,
         message: 'success',
@@ -338,6 +424,49 @@ const that = {
     relaList.forEach(async (rela: any) => {
       await name?.findByIdAndUpdate(rela._id, { $addToSet: { shop: shopId } }, { new: true });
     });
+  },
+  getPhotosShopService: async (slug: string) => { 
+    try {
+      const shop =  await _Shop.findOne({slug: slug})
+      .select("name address images")
+      if(!shop) {
+        return {
+          code: 401,
+          message: 'Something went wrong!',
+        };
+      }
+      return {
+        code: 200,
+        message: 'success',
+        shop,
+      };
+    }
+    catch (e) {
+      console.log(e);
+    }
+
+  },
+  searchShopByNameService: async (query: any) => {
+    try{
+        const shops = await _Shop.find({  $text: { $search: `"${query}"`  } })
+        .select("id name address images slug")
+        console.log(shops)
+        if(!shops) {
+          return {
+            code: 401,
+            message: 'Something went wrong!',
+          };
+        }
+        return {  
+          code: 200,
+          message: 'success',
+          shops
+        }
+
+    }
+    catch (e) {
+      console.log(e);
+    }
   },
 };
 
