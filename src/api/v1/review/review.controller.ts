@@ -10,6 +10,7 @@ interface responseService {
   reviews: any;
   reviewsCount: number;
   avgRate: number;
+  meta: any
 }
 interface Star {
   position: string;
@@ -24,6 +25,7 @@ const {
   unLikeReviewService,
   getReviewByShopIdService,
   deleteReviewService,
+  getListReviewService,
 } = that;
 export const createReview: RequestHandler = async (req, res, next) => {
   try {
@@ -41,7 +43,7 @@ export const createReview: RequestHandler = async (req, res, next) => {
     const { position, space, price, drink, service } = star;
     const validatorResult = validator(title, body);
     if (!validatorResult) return res.status(401).json({ message: 'Invalid' });
-    const { code, message, review } = (await createReviewService({
+    const { code, message} = (await createReviewService({
       title,
       body,
       shop: shopId,
@@ -59,7 +61,6 @@ export const createReview: RequestHandler = async (req, res, next) => {
     })) as responseService;
     res.status(code).json({
       message: message,
-      review,
     });
   } catch (err) {
     console.log(err);
@@ -126,3 +127,17 @@ export const deleteReview: RequestHandler = async (req, res, next) => {
     console.log(err);
   }
 };
+export const getListReview: RequestHandler = async (req, res, next) => { 
+  try{
+    const {page = 1} = req.query
+    const { code, message, reviews, meta } = await getListReviewService(+page) as responseService;
+    return res.status(code).json({
+      message,
+      reviews,
+      meta,
+    });
+  }
+  catch (err) {
+
+  }
+}

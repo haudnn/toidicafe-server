@@ -6,7 +6,8 @@ import _Benefit from '../benefit/benefit.model';
 import _Tag from '../tag/tag.model';
 import _Region from '../region/region.model';
 import _Purpose from '../purpose/Purpose.model';
-import _Review from '../review/review.model'
+import _Review from '../review/review.model';
+import _User from '../user/user.model';
 const that = {
   createShopService: async ({
     name,
@@ -148,7 +149,7 @@ const that = {
       return {
         code: 200,
         message: 'success',
-      };  
+      };
     } catch (err) {
       console.log(err);
     }
@@ -166,11 +167,11 @@ const that = {
   },
   getBookmarksService: async (userId: string, query: any) => {
     try {
-      let { openning, region} = query
+      let { openning, region } = query;
       openning = openning || 'false';
-      region = region || "all"
+      region = region || 'all';
       let shops;
-      let shopsFirstTime = await _Shop.find({bookmarks: userId});
+      let shopsFirstTime = await _Shop.find({ bookmarks: userId });
       const format = shopsFirstTime.map((shop) => {
         const close: any = shop?.time?.close;
         const open: any = shop?.time?.open;
@@ -188,25 +189,28 @@ const that = {
           slug: shop.slug,
           images: shop.images[0],
           status,
-        }
-      })
-      if(openning === 'false' &&  region === "all"){ 
-        shops = format
+        };
+      });
+      if (openning === 'false' && region === 'all') {
+        shops = format;
       }
-      if(openning === 'true') {
-        shops = format.filter((shop) => shop.status === "openning" || shop.status === "closeSoon")
+      if (openning === 'true') {
+        shops = format.filter((shop) => shop.status === 'openning' || shop.status === 'closeSoon');
       }
-      if(region !== "all") {
-        const regionFound:any = await _Region.findOne({ slug: region}).select("shop")
-        if(openning === "true") {
+      if (region !== 'all') {
+        const regionFound: any = await _Region.findOne({ slug: region }).select('shop');
+        if (openning === 'true') {
           shops = format.filter((shop) => {
-            return regionFound.shop.includes(shop.id) && shop.status === "openning" || shop.status === "closeSoon"
-          })
+            return (
+              (regionFound.shop.includes(shop.id) && shop.status === 'openning') ||
+              shop.status === 'closeSoon'
+            );
+          });
         }
-        if(openning === "false") {
+        if (openning === 'false') {
           shops = format.filter((shop) => {
-            return regionFound.shop.includes(shop.id)
-          })
+            return regionFound.shop.includes(shop.id);
+          });
         }
       }
 
@@ -241,7 +245,7 @@ const that = {
             const open: any = shop?.time?.open;
             const status = calculateTime(open, close);
             return (
-              status === "openning" && {
+              status === 'openning' && {
                 id: shop.id,
                 time: shop.time,
                 name: shop.name,
@@ -257,7 +261,7 @@ const that = {
               }
             );
           });
-          shops =  shopsFilter.filter(shop => shop)
+          shops = shopsFilter.filter((shop) => shop);
         } else {
           shops = shopsFirstTime.map((shop: any) => {
             const close: any = shop?.time?.close;
@@ -313,7 +317,8 @@ const that = {
           const close: any = shop?.time?.close;
           const open: any = shop?.time?.open;
           const status = calculateTime(open, close);
-          return  status === 'openning' && {
+          return (
+            status === 'openning' && {
               id: shop.id,
               time: shop.time,
               name: shop.name,
@@ -327,9 +332,9 @@ const that = {
               images: shop.images[0],
               status,
             }
-          ;
+          );
         });
-        shops = shopsFilter.filter(shop => shop)
+        shops = shopsFilter.filter((shop) => shop);
       } else {
         shops = shopsFirstTime.map((shop: any) => {
           const close: any = shop?.time?.close;
@@ -365,9 +370,19 @@ const that = {
       console.log(err);
     }
   },
-  getShopBySlugService: async (slug: string) => {
+  getShopBySlugService: async (slug: string, decoded: any) => {
     try {
+      let isBookMark = false;
+      let userId;
       const shop = await _Shop.findOne({ slug: slug });
+      if(decoded){
+        const user = await _User.findOne({ _id: decoded.userId });
+        userId = user?.id
+      }
+      if(userId){
+        const find = await _Shop.findOne({ slug: slug , bookmarks :{  $in: userId}})
+        if(find) isBookMark = true;
+      }
       if (!shop) {
         return {
           code: 500,
@@ -376,6 +391,49 @@ const that = {
       }
       const benefits = await _Benefit.find({ shop: shop.id }).select('name icon');
       const tags = await _Tag.find({ shop: shop.id }).limit(2).select('name slug');
+      const reviews = await _Review
+        .find({ shop: shop.id })
+        .populate('author', 'userName displayName images')
+        .select('avgStar anonymous title body date images star');
+      let reviewsCount;
+      let avgRateShop;
+      let totalStar;
+      if(reviews.length > 0) {
+        const len = reviews.length;
+        const getKeys: any = reviews[0].star;
+        const keys = Object.keys(getKeys);
+        const total = reviews.reduce(
+          (obj: any, cur: any) => {
+            keys.forEach((key: any) => {
+              obj[key] = cur.star[key] + obj[key];
+            });
+            return obj;
+          },
+          {
+            position: 0,
+            space: 0,
+            price: 0,
+            drink: 0,
+            service: 0,
+          }
+        );
+        totalStar = {
+          ...total,
+          position: total.position / len,
+          space: total.space / len,
+          price: total.price / len,
+          drink: total.drink / len,
+          service: total.service / len,
+        };
+        avgRateShop =
+          (totalStar.position +
+            totalStar.space +
+            totalStar.price +
+            totalStar.drink +
+            totalStar.service) /
+          5;
+      }
+
       const open: any = shop?.time?.open;
       const close: any = shop?.time?.close;
       const status = calculateTime(open, close);
@@ -383,6 +441,7 @@ const that = {
         code: 200,
         message: 'success',
         shop: {
+          id: shop.id,
           time: shop.time,
           name: shop.name,
           social: shop.social,
@@ -391,11 +450,16 @@ const that = {
             min: formatPrice(shop?.price?.min),
             max: formatPrice(shop?.price?.max),
           },
+          isBookMark,
+          reviewsCount,
+          avgRateShop,
           menu: shop.menu,
           slug: shop.slug,
           images: shop.images,
           imagesCount: shop.images.length,
           description: shop.description,
+          totalStar,
+          reviews,
           benefits,
           tags,
           status,
@@ -425,11 +489,10 @@ const that = {
       await name?.findByIdAndUpdate(rela._id, { $addToSet: { shop: shopId } }, { new: true });
     });
   },
-  getPhotosShopService: async (slug: string) => { 
+  getPhotosShopService: async (slug: string) => {
     try {
-      const shop =  await _Shop.findOne({slug: slug})
-      .select("name address images")
-      if(!shop) {
+      const shop = await _Shop.findOne({ slug: slug }).select('name address images');
+      if (!shop) {
         return {
           code: 401,
           message: 'Something went wrong!',
@@ -440,34 +503,31 @@ const that = {
         message: 'success',
         shop,
       };
-    }
-    catch (e) {
+    } catch (e) {
       console.log(e);
     }
-
   },
   searchShopByNameService: async (query: any) => {
-    try{
-        const shops = await _Shop.find({  $text: { $search: `"${query}"`  } })
-        .select("id name address images slug")
-        console.log(shops)
-        if(!shops) {
-          return {
-            code: 401,
-            message: 'Something went wrong!',
-          };
-        }
-        return {  
-          code: 200,
-          message: 'success',
-          shops
-        }
-
-    }
-    catch (e) {
+    try {
+      const shops = await _Shop
+        .find({ $text: { $search: `"${query}"` } })
+        .select('id name address images slug');
+      if (!shops) {
+        return {
+          code: 401,
+          message: 'Something went wrong!',
+        };
+      }
+      return {
+        code: 200,
+        message: 'success',
+        shops,
+      };
+    } catch (e) {
       console.log(e);
     }
   },
+
 };
 
 export default that;

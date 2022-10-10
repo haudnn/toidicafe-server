@@ -10,7 +10,7 @@ const that = {
     const format = formatStar(star);
     const { starFormat, avgStar } = format;
     try {
-      const review = await _Review.create({
+      await _Review.create({
         title,
         body,
         shop,
@@ -22,8 +22,7 @@ const that = {
       });
       return {
         code: 201,
-        message: 'success',
-        review,
+        message: 'Đăng review thành công!',
       };
     } catch (err) {
       console.log(err);
@@ -75,14 +74,15 @@ const that = {
     try {
       let reviewsCount: number = 0;
       let avgRate: number = 0;
-      const reviews = await _Review.find({ shop: shopId })
-      .select("avgStar anonymous title body date")
-      .populate('author','userName displayName avatar')
+      const reviews = await _Review
+        .find({ shop: shopId })
+        .select('avgStar anonymous title body date images')
+        .populate('author', 'userName displayName avatar');
       reviewsCount = reviews.length;
       const sum = reviews.reduce((acc: any, review) => {
         return acc + review.avgStar;
       }, 0);
-      avgRate = sum / reviewsCount;
+      avgRate = Math.round(sum / reviewsCount);
       return {
         code: 200,
         message: 'success',
@@ -94,9 +94,30 @@ const that = {
       console.log(err);
     }
   },
+  getListReviewService: async (page: number = 1) => {
+    try {
+      const pagesize = 10;
+      const reviews = await _Review
+        .find()
+        .select('avgStar anonymous title body date images')
+        .populate('author', 'userName displayName avatar')
+        .populate('shop', 'name id slug')
+        .skip((page - 1) * pagesize)
+        .limit(pagesize);
+        return {
+          code: 200,
+          message: 'success',
+          reviews,
+          meta: {
+            page,
+            pagesize
+          }
+        };
+    } catch (err) {}
+  },
   deleteReviewService: async (reviewId: string) => {
     try {
-      await _Review.findByIdAndDelete(reviewId)
+      await _Review.findByIdAndDelete(reviewId);
       return {
         code: 201,
         message: 'Xóa review thành công!',

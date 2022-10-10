@@ -1,3 +1,4 @@
+import  jwt,{ JwtPayload } from 'jsonwebtoken';
 import { RequestHandler } from 'express';
 import { uploadToCloudinary } from '../helpers';
 import that from './shop.service';
@@ -27,6 +28,9 @@ const {
   getPhotosShopService,
   searchShopByNameService
 } = that;
+import dotenv from 'dotenv';
+dotenv.config();
+const { JWT_KEY} = process.env;
 export const createShop: RequestHandler = async (req, res, next) => {
   try {
     const urls = [];
@@ -177,15 +181,23 @@ export const searchPlace: RequestHandler = async (req, res, next): Promise<any> 
 }
 export const getShopBySlug: RequestHandler = async (req, res, next): Promise<any> =>  {
   const {slug} = req.params
+  const token = req.headers.authorization?.split(' ')[1];
   try{
-    const {code, message, shop} = await getShopBySlugService(slug) as responseService
+    let decoded;
+    if(token) {
+      decoded = jwt.verify(token, JWT_KEY || '') as JwtPayload;
+      if (!decoded){
+        return res.status(401).json({ message: "Authorization not valid" });
+      }
+    }
+    const {code, message, shop} = await getShopBySlugService(slug, decoded) as responseService
     return res.status(code).json({
       message: message,
       shop
     })
   }
   catch(err){
-    console.log(err)
+    return res.status(403).json({message: "Authentication failed"})
   }
 }
 export const getPhotosShop: RequestHandler = async (req, res, next): Promise<any> => { 

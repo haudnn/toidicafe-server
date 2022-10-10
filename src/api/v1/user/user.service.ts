@@ -73,6 +73,7 @@ const that = {
         user: {
           displayName: existingUser.displayName,
           avatar: existingUser.avatar,
+          id: existingUser.id,
           token,
           rftoken
         }
