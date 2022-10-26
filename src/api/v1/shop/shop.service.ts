@@ -419,19 +419,18 @@ const that = {
         );
         totalStar = {
           ...total,
-          position: total.position / len,
-          space: total.space / len,
-          price: total.price / len,
-          drink: total.drink / len,
-          service: total.service / len,
+          position: Math.round(total.position / len),
+          space: Math.round(total.space / len),
+          price: Math.round(total.price / len),
+          drink: Math.round(total.drink / len),
+          service: Math.round(total.service / len),
         };
-        avgRateShop =
-          (totalStar.position +
-            totalStar.space +
-            totalStar.price +
-            totalStar.drink +
-            totalStar.service) /
-          5;
+        avgRateShop = Math.round((totalStar.position +
+          totalStar.space +
+          totalStar.price +
+          totalStar.drink +
+          totalStar.service) /
+        5);
       }
 
       const open: any = shop?.time?.open;

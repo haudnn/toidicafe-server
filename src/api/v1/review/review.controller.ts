@@ -41,8 +41,6 @@ export const createReview: RequestHandler = async (req, res, next) => {
     const { title, body, shopId, anonymous, star } = req.body;
     const userId = req.user;
     const { position, space, price, drink, service } = star;
-    const validatorResult = validator(title, body);
-    if (!validatorResult) return res.status(401).json({ message: 'Invalid' });
     const { code, message} = (await createReviewService({
       title,
       body,
@@ -68,14 +66,14 @@ export const createReview: RequestHandler = async (req, res, next) => {
 };
 export const likeReview: RequestHandler = async (req, res, next) => {
   try {
-    const { reviewId, userId } = req.body;
-    const { code, message, review } = (await likeReviewService(
+    const { reviewId} = req.body;
+    const userId = req.user;
+    const { code, message } = (await likeReviewService(
       reviewId,
       userId
     )) as responseService;
     res.status(code).json({
       message,
-      review,
     });
   } catch (err) {
     console.log(err);
@@ -83,7 +81,8 @@ export const likeReview: RequestHandler = async (req, res, next) => {
 };
 export const unLikeReview: RequestHandler = async (req, res, next) => {
   try {
-    const { reviewId, userId } = req.body;
+    const { reviewId } = req.body;
+    const userId = req.user;
     const { code, message, review } = (await unLikeReviewService(
       reviewId,
       userId

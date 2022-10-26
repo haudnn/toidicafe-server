@@ -43,7 +43,6 @@ const that = {
       return {
         code: 200,
         message: 'success',
-        review,
       };
     } catch (err) {
       console.log(err);
@@ -99,11 +98,11 @@ const that = {
       const pagesize = 10;
       const reviews = await _Review
         .find()
-        .select('avgStar anonymous title body date images')
+        .select('avgStar anonymous title body date images likes comments')
         .populate('author', 'userName displayName avatar')
         .populate('shop', 'name id slug')
-        .skip((page - 1) * pagesize)
-        .limit(pagesize);
+        // .skip((page - 1) * pagesize)
+        // .limit(pagesize);
         return {
           code: 200,
           message: 'success',

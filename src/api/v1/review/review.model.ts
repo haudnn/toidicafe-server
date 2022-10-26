@@ -19,5 +19,4 @@ const ReviewSchema = new Schema({
   anonymous: { type: Boolean, default: false},
 });
 export default model('Review', ReviewSchema);
-// Khi mà người dùng vote sao xong => covert ( 100 => 5 sao case khác same ) => save => shop nó sẽ chọc vào đây
-// => lấy ra star tương ứng shop id => tính trung bình => trả về cùng với shop
+

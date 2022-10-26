@@ -10,6 +10,7 @@ import reviewRoutes from './api/v1/review/review.routes'
 import tagRoutes from './api/v1/tag/tag.routes'
 import purposeRoutes from './api/v1/purpose/purpose.routes'
 import testRoutes from './api/v1/test/test.routes'
+import commentRoutes from './api/v1/comment/comment.routes'
 import { connect } from './config/database.config';
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api/v1/regions', regionRoutes );
 app.use('/api/v1/tags', tagRoutes );
 app.use('/api/v1/purposes', purposeRoutes);
 app.use('/api/v1/testapi', testRoutes);
+app.use('/api/v1/comments', commentRoutes);
 connect()
 
 export default app;

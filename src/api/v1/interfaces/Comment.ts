@@ -1,4 +1,3 @@
-
 export default interface Comment {
     body : string;
     parentReview: string;
